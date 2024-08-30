@@ -39,7 +39,7 @@ def create_pdff(dataframe, report_date, report_shift):
 
     # Header tabel
     headers = ["ID", "Nama Barang", "Gardu", "Deskripsi"]
-    col_widths = [20, 40, 20, 120]  # Lebar kolom yang lebih kecil
+    col_widths = [20, 40, 20, 105]  # Lebar kolom yang lebih kecil
     
     # Mengelompokkan data berdasarkan Gerbang
     gerbang_groups = dataframe.groupby("gerbang")
