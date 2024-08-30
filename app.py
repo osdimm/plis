@@ -9,7 +9,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from contextlib import contextmanager
-import io
+
 
 
 @contextmanager
@@ -39,7 +39,7 @@ def create_pdff(dataframe, report_date, report_shift):
 
     # Header tabel
     headers = ["ID", "Nama Barang", "Gardu", "Deskripsi"]
-    col_widths = [20, 40, 20, 105]  # Lebar kolom yang lebih kecil
+    col_widths = [10, 40, 20, 120]  # Lebar kolom yang lebih kecil
     
     # Mengelompokkan data berdasarkan Gerbang
     gerbang_groups = dataframe.groupby("gerbang")
@@ -86,6 +86,8 @@ def create_pdff(dataframe, report_date, report_shift):
         pdf_content = tmpfile.read()
 
     return pdf_content
+
+
     
 def execute_query_with_retry(query, params=None, max_retries=3):
     for attempt in range(max_retries):
@@ -96,30 +98,30 @@ def execute_query_with_retry(query, params=None, max_retries=3):
                 time.sleep(0.1 * (attempt + 1))  # Eksponensial backoff
             else:
                 raise    
-def kirim_email(penerima, subjek, pesan):
+#def kirim_email(penerima, subjek, pesan):
     # Konfigurasi email
-    pengirim = "anakudadery@gmail.com"
-    password = "rcxo xpcc tzhk rdzh"
+    #pengirim = "anakudadery@gmail.com"
+    #password = "rcxo xpcc tzhk rdzh"
 
     # Membuat pesan
-    msg = MIMEMultipart()
-    msg['From'] = pengirim
-    msg['To'] = ', '.join(penerima)  # Gabungkan daftar penerima menjadi string
-    msg['Subject'] = subjek
+    #msg = MIMEMultipart()
+    #msg['From'] = pengirim
+    #msg['To'] = ', '.join(penerima)  # Gabungkan daftar penerima menjadi string
+    #msg['Subject'] = subjek
 
     # Menambahkan body email
-    msg.attach(MIMEText(pesan, 'plain'))
+    #msg.attach(MIMEText(pesan, 'plain'))
 
     # Membuat koneksi ke server SMTP
-    server = smtplib.SMTP('smtp.gmail.com', 587)
-    server.starttls()
-    server.login(pengirim, password)
+    #server = smtplib.SMTP('smtp.gmail.com', 587)
+    #server.starttls()
+    #server.login(pengirim, password)
 
     # Mengirim email
-    text = msg.as_string()
-    server.sendmail(pengirim, penerima, text)  # Penerima harus berupa list
-    server.quit()
-email_penerima = ['oslodinamoras@gmail.com']
+    #text = msg.as_string()
+    #server.sendmail(pengirim, penerima, text)  # Penerima harus berupa list
+    #server.quit()
+#email_penerima = ['oslodinamoras@gmail.com']
 
 # Definisikan zona waktu Jakarta
 jakarta_tz = pytz.timezone('Asia/Jakarta')
@@ -181,6 +183,7 @@ def create_pdf(riwayat_kerusakan, riwayat_perbaikan, durasi_df, nama_barang, nam
         pdf_content = tmpfile.read()
 
     return pdf_content
+
 
 # Fungsi untuk memeriksa kredensial
 def check_credentials(username, password):
@@ -329,11 +332,11 @@ def main_app():
         ''', (current_time - timedelta(seconds=10),))
 
         # Kirim email untuk setiap item yang baru saja menjadi Kendala
-        for item in new_kendala_items:
-            id_barang, nama_barang, gerbang, gardu, deskripsi = item
-            subjek = f"Kendala pada {nama_barang} di Gerbang {gerbang} Gardu {gardu}"
-            pesan = f"Terdapat kendala pada {nama_barang} di Gerbang {gerbang}, Gardu {gardu}. Deskripsi kendala: {deskripsi}. Mohon segera ditindaklanjuti untuk memastikan operasional berjalan dengan baik. Terima kasih atas perhatian dan tindak lanjutnya. (https://sistem-pemeliharaan-alat-tol-cijago.streamlit.app/)"
-            kirim_email(email_penerima, subjek, pesan)  # Kirim ke beberapa penerima
+        #for item in new_kendala_items:
+            #id_barang, nama_barang, gerbang, gardu, deskripsi = item
+            #subjek = f"Kendala pada {nama_barang} di Gerbang {gerbang} Gardu {gardu}"
+            #pesan = f"Terdapat kendala pada {nama_barang} di Gerbang {gerbang}, Gardu {gardu}. Deskripsi kendala: {deskripsi}. Mohon segera ditindaklanjuti untuk memastikan operasional berjalan dengan baik. Terima kasih atas perhatian dan tindak lanjutnya. (https://sistem-pemeliharaan-alat-tol-cijago.streamlit.app/)"
+            #kirim_email(email_penerima, subjek, pesan)  # Kirim ke beberapa penerima
 
         return updated_items, new_kendala_items
 
@@ -426,7 +429,7 @@ def main_app():
             elif val == 'Perbaikan':
                 return 'background-color: yellow'
             elif val == 'Monitor':
-                return 'background-color: orange'
+                return 'background-color: purple'
             elif val == 'Normal':
                 return 'background-color: green'
             return ''
@@ -552,7 +555,7 @@ def main_app():
         elif warna == "Perbaikan":
             st.markdown('<div style="background-color: yellow; color: black; padding: 10px; border-radius: 5px;">Perbaikan</div>', unsafe_allow_html=True)
         elif warna == "Monitor":
-            st.markdown('<div style="background-color: orange; color: black; padding: 10px; border-radius: 5px;">Monitor</div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: purple; color: black; padding: 10px; border-radius: 5px;">Monitor</div>', unsafe_allow_html=True)
         elif warna == "Normal":
             st.markdown('<div style="background-color: green; color: white; padding: 10px; border-radius: 5px;">Normal</div>', unsafe_allow_html=True)
 
@@ -724,7 +727,7 @@ def main():
     else:
         main_app()
 
-if __name__ == "__main__":
+if __name__ == "__main__": 
     st.set_page_config(page_title="Sistem Informasi Pemeliharaan Alat TOL Cijago", layout="wide")
     main()
     
