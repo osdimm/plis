@@ -552,7 +552,7 @@ def main_app():
         elif warna == "Perbaikan":
             st.markdown('<div style="background-color: yellow; color: black; padding: 10px; border-radius: 5px;">Perbaikan</div>', unsafe_allow_html=True)
         elif warna == "Monitor":
-            st.markdown('<div style="background-color: orange; color: black; padding: 10px; border-radius: 5px;">Monitor</div>', unsafe_allow_html=True)
+            st.markdown('<div style="background-color: purple; color: black; padding: 10px; border-radius: 5px;">Monitor</div>', unsafe_allow_html=True)
         elif warna == "Normal":
             st.markdown('<div style="background-color: green; color: white; padding: 10px; border-radius: 5px;">Normal</div>', unsafe_allow_html=True)
 
