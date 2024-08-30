@@ -138,27 +138,32 @@ def create_pdf(riwayat_kerusakan, riwayat_perbaikan, durasi_df, nama_barang, nam
     pdf.cell(0, 10, f"Riwayat {nama_barang} di Gerbang {nama_gerbang} Gardu {nama_gardu}", 0, 1, 'C')
     pdf.ln(10)
 
-    def add_table(df, title):
+    def add_table(df, title, col_widths):
         pdf.set_font('Arial', 'B', 12)
         pdf.cell(0, 10, title, 0, 1, 'L')
         pdf.set_font('Arial', '', 10)
         
         # Table header
-        for col in df.columns:
-            pdf.cell(40, 7, str(col), 1, 0, 'C')
+        for i, col in enumerate(df.columns):
+            pdf.cell(col_widths[i], 7, str(col), 1, 0, 'C')
         pdf.ln()
         
         # Table data
         for _, row in df.iterrows():
-            for item in row:
-                pdf.cell(40, 7, str(item), 1, 0, 'C')
+            for i, item in enumerate(row):
+                pdf.cell(col_widths[i], 7, str(item), 1, 0, 'C')
             pdf.ln()
         
         pdf.ln(10)
 
-    add_table(riwayat_kerusakan, "Riwayat Kerusakan")
-    add_table(riwayat_perbaikan, "Riwayat Perbaikan")
-    add_table(durasi_df, "Durasi Perbaikan")
+    # Tentukan lebar kolom di sini
+    col_widths_kerusakan = [20, 20, 170, 15, 40]  # Misalnya untuk Riwayat Kerusakan
+    col_widths_perbaikan = [20, 20, 170, 15, 40]  # Misalnya untuk Riwayat Perbaikan
+    col_widths_durasi = [20, 150]  # Misalnya untuk Durasi Perbaikan
+
+    add_table(riwayat_kerusakan, "Riwayat Kerusakan", col_widths_kerusakan)
+    add_table(riwayat_perbaikan, "Riwayat Perbaikan", col_widths_perbaikan)
+    add_table(durasi_df, "Durasi Perbaikan", col_widths_durasi)
 
     # Instead of using BytesIO, we'll save to a temporary file
     import tempfile
