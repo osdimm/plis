@@ -38,37 +38,45 @@ def create_pdff(dataframe, report_date, report_shift):
     pdf.cell(200, 10, txt=f"Laporan Harian - Tanggal: {report_date}, Shift: {report_shift}", ln=True, align='C')
 
     # Header tabel
-    pdf.set_font("Arial", size=8)  # Gunakan ukuran font lebih kecil
-    col_widths = [10, 40, 30, 10, 50, 25]  # Lebar kolom yang lebih kecil
-    headers = ["ID", "Nama Barang", "Gerbang", "Gardu", "Deskripsi", "Tanggal"]
-    for i, header in enumerate(headers):
-        pdf.cell(col_widths[i], 8, header, border=1, align='C')  # Tinggi baris lebih kecil
-    pdf.ln()
+    headers = ["ID", "Nama Barang", "Gardu", "Deskripsi"]
+    col_widths = [10, 40, 20, 120]  # Lebar kolom yang lebih kecil
+    
+    # Mengelompokkan data berdasarkan Gerbang
+    gerbang_groups = dataframe.groupby("gerbang")
 
-    # Isi data tabel
-    pdf.set_font("Arial", size=8)  # Gunakan ukuran font lebih kecil
-    row_height = 8  # Tinggi baris lebih kecil
-    num_rows_per_page = (pdf.h - 20) // row_height  # Menghitung berapa baris yang bisa muat dalam satu halaman
-    row_count = 0
+    for gerbang, group in gerbang_groups:
+        pdf.ln(10)  # Spasi antara gerbang
+        pdf.set_font("Arial", "B", 9)  # Judul gerbang
+        pdf.cell(200, 10, f"Gerbang: {gerbang}", ln=True, align='L')
 
-    for row in dataframe.itertuples(index=False):
-        if row_count >= num_rows_per_page:
-            pdf.add_page()  # Tambah halaman baru
-            # Cetak header lagi di halaman baru
-            pdf.set_font("Arial", size=8)
-            for i, header in enumerate(headers):
-                pdf.cell(col_widths[i], 8, header, border=1, align='C')
-            pdf.ln()
-            row_count = 0
-        
-        pdf.cell(col_widths[0], row_height, str(row.id), border=1)
-        pdf.cell(col_widths[1], row_height, row.nama_barang, border=1)
-        pdf.cell(col_widths[2], row_height, row.gerbang, border=1)
-        pdf.cell(col_widths[3], row_height, row.gardu, border=1)
-        pdf.cell(col_widths[4], row_height, row.deskripsi, border=1)
-        pdf.cell(col_widths[5], row_height, row.tanggal, border=1)
+        # Cetak header tabel
+        pdf.set_font("Arial", size=8)
+        for i, header in enumerate(headers):
+            pdf.cell(col_widths[i], 8, header, border=1, align='C')
         pdf.ln()
-        row_count += 1
+
+        row_height = 8  # Tinggi baris lebih kecil
+        row_count = 0
+        num_rows_per_page = (pdf.h - 20) // row_height  # Menghitung berapa baris yang bisa muat dalam satu halaman
+
+        for row in group.itertuples(index=False):
+            if row_count >= num_rows_per_page:
+                pdf.add_page()  # Tambah halaman baru
+                pdf.set_font("Arial", size=8)
+                pdf.cell(200, 10, f"Gerbang: {gerbang}", ln=True, align='L')
+                # Cetak header tabel lagi di halaman baru
+                for i, header in enumerate(headers):
+                    pdf.cell(col_widths[i], 8, header, border=1, align='C')
+                pdf.ln()
+                row_count = 0
+
+            pdf.cell(col_widths[0], row_height, str(row.id), border=1, align='C')  # ID center
+            pdf.cell(col_widths[1], row_height, row.nama_barang, border=1, align='L')  # Nama Barang left-aligned
+            pdf.cell(col_widths[2], row_height, row.gardu, border=1, align='C')  # Gardu center
+            pdf.cell(col_widths[3], row_height, row.deskripsi, border=1, align='L')  # Deskripsi left-aligned
+            
+            pdf.ln()
+            row_count += 1
 
     # Simpan PDF ke buffer
     import tempfile
