@@ -9,8 +9,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from contextlib import contextmanager
-
-
+import calendar
 
 @contextmanager
 def get_db_connection():
@@ -29,6 +28,7 @@ def execute_query(query, params=None):
             c.execute(query)
         conn.commit()
         return c.fetchall()
+    
 def create_pdff(dataframe, report_date, report_shift):
     pdf = FPDF()
     pdf.add_page()
@@ -87,7 +87,63 @@ def create_pdff(dataframe, report_date, report_shift):
 
     return pdf_content
 
+def create_monthly_pdf(dataframe, report_month, report_year):
+    pdf = FPDF(orientation='L', unit='mm', format='A4')
+    pdf.set_auto_page_break(auto=True, margin=15)
 
+    # Group the dataframe by gerbang
+    grouped = dataframe.groupby('gerbang')
+    
+    for gerbang, group_data in grouped:
+        pdf.add_page()
+
+        # Title
+        pdf.set_font("Arial", size=20, style="B")
+        pdf.cell(0, 15, txt=f"Laporan Bulanan - {calendar.month_name[report_month]} {report_year}", ln=True, align='C')
+        pdf.ln(5)
+
+        # Gerbang
+        pdf.set_font("Arial", size=18, style="B")
+        pdf.cell(0, 12, txt=f"Gerbang: {gerbang}", ln=True, align='L')
+        pdf.ln(5)
+
+        # Headers
+        headers = ["Tanggal", "Shift", "Nama Barang", "Gardu", "Deskripsi"]
+        col_widths = [35, 20, 50, 30, 135]
+
+        pdf.set_font("Arial", size=12, style="B")
+        for i, header in enumerate(headers):
+            pdf.cell(col_widths[i], 12, header, border=1, align='C')
+        pdf.ln()
+
+        # Data
+        pdf.set_font("Arial", size=10)
+        for _, row in group_data.iterrows():
+            max_height = pdf.font_size * 2  # Minimum 2 lines height
+            
+            # Calculate the maximum height needed for this row
+            for i, col_name in enumerate(['tanggal', 'shift', 'nama_barang', 'gardu', 'deskripsi']):
+                content = str(row[col_name])
+                lines = len(pdf.multi_cell(col_widths[i], pdf.font_size, content, split_only=True))
+                max_height = max(max_height, lines * pdf.font_size)
+            
+            # Print cells with calculated height
+            for i, col_name in enumerate(['tanggal', 'shift', 'nama_barang', 'gardu', 'deskripsi']):
+                content = str(row[col_name])
+                pdf.multi_cell(col_widths[i], max_height, content, border=1, align='L', ln=3)
+            
+            pdf.ln(max_height)
+
+        pdf.ln(10)
+
+    # Save PDF to buffer
+    import tempfile
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmpfile:
+        pdf.output(tmpfile.name)
+        tmpfile.seek(0)
+        pdf_content = tmpfile.read()
+
+    return pdf_content
     
 def execute_query_with_retry(query, params=None, max_retries=3):
     for attempt in range(max_retries):
@@ -98,6 +154,7 @@ def execute_query_with_retry(query, params=None, max_retries=3):
                 time.sleep(0.1 * (attempt + 1))  # Eksponensial backoff
             else:
                 raise    
+
 #def kirim_email(penerima, subjek, pesan):
     # Konfigurasi email
     #pengirim = "anakudadery@gmail.com"
@@ -207,6 +264,7 @@ def login_page():
 def reset_sequence(table_name):
     global c
     c.execute(f"DELETE FROM sqlite_sequence WHERE name='{table_name}'")
+
 def create_daily_report_table():
     c.execute('''
     CREATE TABLE IF NOT EXISTS daily_report (
@@ -221,10 +279,12 @@ def create_daily_report_table():
     )
     ''')
     conn.commit()
+
 # Fungsi utama aplikasi
 def main_app():
     global c, conn
     create_daily_report_table()
+
     def add_last_update_column():
         c.execute("PRAGMA table_info(barang)")
         columns = [column[1] for column in c.fetchall()]
@@ -248,7 +308,6 @@ def main_app():
     )
     ''')
     
-
     # Membuat tabel durasi perbaikan
     c.execute('''
     CREATE TABLE IF NOT EXISTS Durasi_Perbaikan (
@@ -332,10 +391,10 @@ def main_app():
         ''', (current_time - timedelta(seconds=10),))
 
         # Kirim email untuk setiap item yang baru saja menjadi Kendala
-        #for item in new_kendala_items:
-            #id_barang, nama_barang, gerbang, gardu, deskripsi = item
-            #subjek = f"Kendala pada {nama_barang} di Gerbang {gerbang} Gardu {gardu}"
-            #pesan = f"Terdapat kendala pada {nama_barang} di Gerbang {gerbang}, Gardu {gardu}. Deskripsi kendala: {deskripsi}. Mohon segera ditindaklanjuti untuk memastikan operasional berjalan dengan baik. Terima kasih atas perhatian dan tindak lanjutnya. (https://sistem-pemeliharaan-alat-tol-cijago.streamlit.app/)"
+        for item in new_kendala_items:
+            id_barang, nama_barang, gerbang, gardu, deskripsi = item
+            subjek = f"Kendala pada {nama_barang} di Gerbang {gerbang} Gardu {gardu}"
+            pesan = f"Terdapat kendala pada {nama_barang} di Gerbang {gerbang}, Gardu {gardu}. Deskripsi kendala: {deskripsi}. Mohon segera ditindaklanjuti untuk memastikan operasional berjalan dengan baik. Terima kasih atas perhatian dan tindak lanjutnya. (https://sistem-pemeliharaan-alat-tol-cijago.streamlit.app/)"
             #kirim_email(email_penerima, subjek, pesan)  # Kirim ke beberapa penerima
 
         return updated_items, new_kendala_items
@@ -658,33 +717,34 @@ def main_app():
             st.rerun()
 
     with tab3:
-        st.header("Laporan Harian")
-
-        # Date and shift selection
-        report_date = st.date_input("Pilih Tanggal", today, key="report_date")
-        report_shift = st.selectbox("Pilih Shift", [1, 2, 3], key="report_shift")
-
-        # Fetch and display the daily report
         
-        daily_report_query = """
-        SELECT dr.id, b.Nama as nama_barang, dr.gerbang, dr.gardu, dr.deskripsi, dr.tanggal, dr.shift
-        FROM daily_report dr
-        JOIN barang b ON dr.id_barang = b.ID
-        WHERE DATE(dr.tanggal) = ? AND dr.shift = ?
-        """
-        daily_report = pd.read_sql(daily_report_query, conn, params=(report_date.strftime("%Y-%m-%d"), report_shift))
+        st.header("Laporan")
 
-        if not daily_report.empty:
-            st.dataframe(daily_report)
+        # Add radio button to choose between daily and monthly report
+        report_type = st.radio("Pilih Jenis Laporan", ["Harian", "Bulanan"])
 
-            # Tombol Download PDF
-            
-            pdf_bytes = create_pdff(daily_report, report_date, report_shift)
-            st.download_button(
-                label="Download PDF",
-                data=pdf_bytes,
-                file_name=f"Laporan_Harian_{report_date}_{report_shift}.pdf",
-                mime="application/pdf"
+        if report_type == "Harian":
+            # Existing daily report code
+            report_date = st.date_input("Pilih Tanggal", today, key="report_date")
+            report_shift = st.selectbox("Pilih Shift", [1, 2, 3], key="report_shift")
+
+            daily_report_query = """
+            SELECT dr.id, b.Nama as nama_barang, dr.gerbang, dr.gardu, dr.deskripsi, dr.tanggal, dr.shift
+            FROM daily_report dr
+            JOIN barang b ON dr.id_barang = b.ID
+            WHERE DATE(dr.tanggal) = ? AND dr.shift = ?
+            """
+            daily_report = pd.read_sql(daily_report_query, conn, params=(report_date.strftime("%Y-%m-%d"), report_shift))
+
+            if not daily_report.empty:
+                st.dataframe(daily_report)
+
+                pdf_bytes = create_pdff(daily_report, report_date, report_shift)
+                st.download_button(
+                    label="Download PDF Laporan Harian",
+                    data=pdf_bytes,
+                    file_name=f"Laporan_Harian_{report_date}_{report_shift}.pdf",
+                    mime="application/pdf"
                 )
 
             # Loop untuk setiap baris dalam laporan harian dan menampilkan tombol hapus
@@ -694,8 +754,35 @@ def main_app():
                     st.success(f"Data dengan ID {row['id']} berhasil dihapus.")
                     st.rerun()  # Mereload halaman setelah data dihapus
 
-        else:
-            st.info("Tidak ada data untuk tanggal dan shift yang dipilih.")
+            else:
+                st.info("Tidak ada data untuk tanggal dan shift yang dipilih.")
+        else:  # Monthly report
+            report_month = st.selectbox("Pilih Bulan", range(1, 13), format_func=lambda x: calendar.month_name[x])
+            report_year = st.number_input("Pilih Tahun", min_value=2000, max_value=datetime.now().year, value=datetime.now().year)
+
+            monthly_report_query = """
+            SELECT dr.id, b.Nama as nama_barang, dr.gerbang, dr.gardu, dr.deskripsi, dr.tanggal, dr.shift
+            FROM daily_report dr
+            JOIN barang b ON dr.id_barang = b.ID
+            WHERE strftime('%m', dr.tanggal) = ? AND strftime('%Y', dr.tanggal) = ?
+            ORDER BY dr.gerbang, dr.tanggal, dr.shift, b.Nama
+            """
+            monthly_report = pd.read_sql(monthly_report_query, conn, params=(f"{report_month:02d}", str(report_year)))
+
+            if not monthly_report.empty:
+                st.dataframe(monthly_report)
+
+                pdf_bytes = create_monthly_pdf(monthly_report, report_month, report_year)
+                st.download_button(
+                    label="Download PDF Laporan Bulanan",
+                    data=pdf_bytes,
+                    file_name=f"Laporan_Bulanan_{calendar.month_name[report_month]}_{report_year}.pdf",
+                    mime="application/pdf"
+                )
+
+            else:
+                st.info("Tidak ada data untuk bulan dan tahun yang dipilih.")
+
     st.markdown(
         """
         <style>
