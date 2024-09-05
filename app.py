@@ -431,7 +431,7 @@ def main_app():
         
     st.title("Sistem Informasi Pemeliharaan Alat TOL Cijago")
     # Tab 1: Data Barang
-    tab1, tab2, tab3 = st.tabs(["Data Barang", "Update Barang", "Laporan Harian"])
+    tab1, tab2, tab3 = st.tabs(["Data Barang", "Update Barang", "Laporan"])
 
     with tab1:
         st.header("Daftar Semua Barang")
