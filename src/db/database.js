@@ -96,6 +96,7 @@ function syncLegacyDailyReports(database) {
       lh.Tanggal,
       lh.Shift
     FROM Laporan_Harian lh
+    JOIN barang b ON b.ID = lh.ID_Barang
     WHERE NOT EXISTS (
       SELECT 1
       FROM daily_report dr
@@ -116,6 +117,7 @@ function syncLegacyDailyReports(database) {
       dr.tanggal,
       dr.shift
     FROM daily_report dr
+    JOIN barang b ON b.ID = dr.id_barang
     WHERE NOT EXISTS (
       SELECT 1
       FROM Laporan_Harian lh

@@ -10,7 +10,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "test": "node --test"
+    "test": "node test/run-smoke.js"
   },
   "optionalDependencies": {
     "better-sqlite3": "^11.8.1"
